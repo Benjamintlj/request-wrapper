@@ -3,6 +3,9 @@ package requestwrapper_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
+	"strings"
 	"testing"
 
 	rw "github.com/Benjamintlj/request-wrapper"
@@ -31,6 +34,26 @@ func TestHandlerReturnsOK(t *testing.T) {
 
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+}
+
+func TestNewFatalsWhenBuiltInMiddlewareIsOutOfOrder(t *testing.T) {
+	custom := func(next rw.HandlerFunc) rw.HandlerFunc { return next }
+	if os.Getenv("RW_TEST_FATAL_ORDER") == "1" {
+		rw.New(rw.Audit, custom, rw.ContextID)
+		return
+	}
+
+	rw.New(rw.ContextID, custom, rw.Audit, rw.ErrorCapture)
+	command := exec.Command(os.Args[0], "-test.run=^TestNewFatalsWhenBuiltInMiddlewareIsOutOfOrder$")
+	command.Env = append(os.Environ(), "RW_TEST_FATAL_ORDER=1")
+	output, err := command.CombinedOutput()
+	exit, ok := err.(*exec.ExitError)
+	if !ok || exit.ExitCode() != 1 {
+		t.Fatalf("expected fatal exit, got %v: %s", err, output)
+	}
+	if !strings.Contains(string(output), "middleware out of order: expected position 0 follows 1") {
+		t.Fatalf("expected out-of-order message, got %q", output)
 	}
 }
 

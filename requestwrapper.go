@@ -2,7 +2,9 @@ package requestwrapper
 
 import (
 	"errors"
+	"log"
 	"net/http"
+	"reflect"
 	"slices"
 )
 
@@ -20,7 +22,29 @@ type Wrapper struct {
 
 // New creates a wrapper with middleware applied in the order provided.
 // The first middleware is the outermost wrapper and runs first on a request.
+// It exits the process when built-in middleware is supplied out of order.
 func New(middleware ...Middleware) *Wrapper {
+	positions := map[uintptr]int{
+		reflect.ValueOf(ContextID).Pointer():    0,
+		reflect.ValueOf(Audit).Pointer():        1,
+		reflect.ValueOf(ErrorCapture).Pointer(): 2,
+	}
+
+	previous := -1
+	for _, entry := range middleware {
+		if entry == nil {
+			continue
+		}
+		position, builtIn := positions[reflect.ValueOf(entry).Pointer()]
+		if !builtIn {
+			continue
+		}
+		if position <= previous {
+			log.Fatalf("middleware out of order: expected position %d follows %d", position, previous)
+		}
+		previous = position
+	}
+
 	return &Wrapper{middleware: middleware}
 }
 
