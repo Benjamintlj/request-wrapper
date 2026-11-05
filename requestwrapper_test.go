@@ -12,15 +12,15 @@ func TestHandlerReturnsOK(t *testing.T) {
 		return rw.OK()
 	}
 
-	r := rw.New()
-	r.Wrap(
+	r := rw.New(
 		rw.ContextID,
 		rw.Audit,
 		rw.ErrorCapture,
 	)
 	mux := http.NewServeMux()
 	mux.Handle("GET /", r.Handler(handler))
-	r.Start(":8080", mux)
+	r.ListenAndServe(":8080", mux)
+	defer r.Close()
 
 	response, err := http.Get("http://localhost:8080/")
 	if err != nil {
