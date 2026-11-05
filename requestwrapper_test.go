@@ -20,10 +20,10 @@ func TestHandlerReturnsOK(t *testing.T) {
 	)
 	mux := http.NewServeMux()
 	mux.Handle("GET /", r.Handler(handler))
-	r.ListenAndServe(":8080", mux)
-	defer r.Close()
+	server := httptest.NewServer(mux)
+	defer server.Close()
 
-	response, err := http.Get("http://localhost:8080/")
+	response, err := http.Get(server.URL + "/")
 	if err != nil {
 		t.Fatal(err)
 	}
