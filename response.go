@@ -2,6 +2,7 @@ package requestwrapper
 
 import "net/http"
 
+// Response holds the HTTP status and optional error returned by a HandlerFunc.
 type Response struct {
 	StatusCode int
 	Err        error
