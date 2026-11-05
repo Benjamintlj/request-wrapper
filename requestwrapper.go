@@ -18,48 +18,49 @@ type Middleware func(HandlerFunc) HandlerFunc
 type Wrapper struct {
 	middleware []Middleware
 	server     *http.Server
+	done       chan struct{}
 }
 
 // New creates a wrapper with middleware applied in the order provided.
 // The first middleware is the outermost wrapper and runs first on a request.
 // It exits the process when built-in middleware is supplied out of order.
 func New(middleware ...Middleware) *Wrapper {
-    expected := []Middleware{
-        ContextID,
-        Audit,
-        ErrorCapture,
-    }
+	expected := []Middleware{
+		ContextID,
+		Audit,
+		ErrorCapture,
+	}
 
-    positions := make(map[uintptr]int, len(expected))
-    for i, entry := range expected {
-        positions[getPointer(entry)] = i
-    }
+	positions := make(map[uintptr]int, len(expected))
+	for i, entry := range expected {
+		positions[getPointer(entry)] = i
+	}
 
-    previous := -1
-    for _, entry := range middleware {
-        if entry == nil {
-            continue
-        }
+	previous := -1
+	for _, entry := range middleware {
+		if entry == nil {
+			continue
+		}
 
-        position, builtIn := positions[getPointer(entry)]
-        if !builtIn {
-            continue
-        }
+		position, builtIn := positions[getPointer(entry)]
+		if !builtIn {
+			continue
+		}
 
-        if position <= previous {
-            log.Fatal("middleware out of order")
-        }
+		if position <= previous {
+			log.Fatal("middleware out of order")
+		}
 
-        previous = position
-    }
+		previous = position
+	}
 
-    return &Wrapper{middleware: middleware}
+	return &Wrapper{middleware: middleware}
 }
 
 // Handler applies the middleware and adapts a HandlerFunc to http.Handler.
-func (wrapper *Wrapper) Handler(handler HandlerFunc) http.Handler {
+func (w *Wrapper) Handler(handler HandlerFunc) http.Handler {
 	wrapped := handler
-	for _, v := range slices.Backward(wrapper.middleware) {
+	for _, v := range slices.Backward(w.middleware) {
 		wrapped = v(wrapped)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -73,8 +74,10 @@ func (wrapper *Wrapper) Handler(handler HandlerFunc) http.Handler {
 func (w *Wrapper) ListenAndServe(address string, handler http.Handler) <-chan error {
 	w.server = &http.Server{Addr: address, Handler: handler}
 	errorsCh := make(chan error, 1)
+	w.done = make(chan struct{}, 1)
 
 	go func() {
+		defer close(w.done)
 		defer close(errorsCh)
 		if err := w.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errorsCh <- err
@@ -89,6 +92,8 @@ func (w *Wrapper) Close() {
 	if w.server != nil {
 		_ = w.server.Close()
 	}
+
+	<-w.done
 }
 
 func getPointer(middleware Middleware) uintptr {
