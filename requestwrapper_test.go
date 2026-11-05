@@ -2,6 +2,7 @@ package requestwrapper_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	rw "github.com/Benjamintlj/request-wrapper"
@@ -30,5 +31,22 @@ func TestHandlerReturnsOK(t *testing.T) {
 
 	if response.StatusCode != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
+	}
+}
+
+func TestHandlerUsesReturnedStatus(t *testing.T) {
+	r := rw.New()
+	server := httptest.NewServer(r.Handler(func(w http.ResponseWriter, req *http.Request) rw.Response {
+		return rw.Created()
+	}))
+	defer server.Close()
+
+	response, err := http.Get(server.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	if response.StatusCode != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, response.StatusCode)
 	}
 }

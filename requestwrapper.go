@@ -31,7 +31,8 @@ func (wrapper *Wrapper) Handler(handler HandlerFunc) http.Handler {
 		wrapped = v(wrapped)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		wrapped(w, r)
+		response := wrapped(w, r)
+		w.WriteHeader(response.StatusCode)
 	})
 }
 
