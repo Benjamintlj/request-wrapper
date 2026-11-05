@@ -24,28 +24,36 @@ type Wrapper struct {
 // The first middleware is the outermost wrapper and runs first on a request.
 // It exits the process when built-in middleware is supplied out of order.
 func New(middleware ...Middleware) *Wrapper {
-	positions := map[uintptr]int{
-		reflect.ValueOf(ContextID).Pointer():    0,
-		reflect.ValueOf(Audit).Pointer():        1,
-		reflect.ValueOf(ErrorCapture).Pointer(): 2,
-	}
+    expected := []Middleware{
+        ContextID,
+        Audit,
+        ErrorCapture,
+    }
 
-	previous := -1
-	for _, entry := range middleware {
-		if entry == nil {
-			continue
-		}
-		position, builtIn := positions[reflect.ValueOf(entry).Pointer()]
-		if !builtIn {
-			continue
-		}
-		if position <= previous {
-			log.Fatalf("middleware out of order: expected position %d follows %d", position, previous)
-		}
-		previous = position
-	}
+    positions := make(map[uintptr]int, len(expected))
+    for i, entry := range expected {
+        positions[getPointer(entry)] = i
+    }
 
-	return &Wrapper{middleware: middleware}
+    previous := -1
+    for _, entry := range middleware {
+        if entry == nil {
+            continue
+        }
+
+        position, builtIn := positions[getPointer(entry)]
+        if !builtIn {
+            continue
+        }
+
+        if position <= previous {
+            log.Fatal("middleware out of order")
+        }
+
+        previous = position
+    }
+
+    return &Wrapper{middleware: middleware}
 }
 
 // Handler applies the middleware and adapts a HandlerFunc to http.Handler.
@@ -81,4 +89,8 @@ func (w *Wrapper) Close() {
 	if w.server != nil {
 		_ = w.server.Close()
 	}
+}
+
+func getPointer(middleware Middleware) uintptr {
+	return reflect.ValueOf(middleware).Pointer()
 }
