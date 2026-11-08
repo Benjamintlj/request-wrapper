@@ -13,7 +13,7 @@ func TestHandlerReturnsOK(t *testing.T) {
 	}
 
 	r := rw.New(
-		rw.ContextID,
+		rw.CorrelationID,
 		rw.Audit,
 		rw.ErrorCapture,
 	)
@@ -32,4 +32,3 @@ func TestHandlerReturnsOK(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, response.StatusCode)
 	}
 }
-

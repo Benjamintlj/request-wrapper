@@ -1,6 +1,7 @@
 package requestwrapper
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -26,7 +27,7 @@ type Wrapper struct {
 // It exits the process when built-in middleware is supplied out of order.
 func New(middleware ...Middleware) *Wrapper {
 	expected := []Middleware{
-		ContextID,
+		CorrelationID,
 		Audit,
 		ErrorCapture,
 	}
@@ -64,6 +65,9 @@ func (w *Wrapper) Handler(handler HandlerFunc) http.Handler {
 		wrapped = v(wrapped)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithCancel(r.Context())
+		defer cancel()
+		r = r.WithContext(ctx)
 		response := wrapped(w, r)
 		w.WriteHeader(response.StatusCode)
 	})
