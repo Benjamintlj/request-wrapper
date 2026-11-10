@@ -8,7 +8,7 @@ import (
 )
 
 func TestHandlerReturnsOK(t *testing.T) {
-	handler := func(w http.ResponseWriter, r *http.Request) rw.Response {
+	handler := func(w rw.ResponseWriter, r *http.Request) rw.Response {
 		return rw.OK()
 	}
 

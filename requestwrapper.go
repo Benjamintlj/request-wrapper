@@ -10,7 +10,7 @@ import (
 )
 
 // HandlerFunc handles an HTTP request and returns a response for the wrapper.
-type HandlerFunc func(http.ResponseWriter, *http.Request) Response
+type HandlerFunc func(ResponseWriter, *http.Request) Response
 
 // Middleware wraps a HandlerFunc with request or response behavior.
 type Middleware func(HandlerFunc) HandlerFunc
@@ -65,11 +65,15 @@ func (w *Wrapper) Handler(handler HandlerFunc) http.Handler {
 		wrapped = v(wrapped)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writer := newResponseWriter(w)
+		defer func() { _ = writer.Close() }()
 		ctx, cancel := context.WithCancel(r.Context())
 		defer cancel()
 		r = r.WithContext(ctx)
-		response := wrapped(w, r)
-		w.WriteHeader(response.StatusCode)
+		wrapped(writer, r)
+		if _, err := w.Write(writer.Body()); err != nil {
+			log.Printf("warning: writing response: %v", err)
+		}
 	})
 }
 

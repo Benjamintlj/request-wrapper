@@ -19,7 +19,7 @@ func TestCorrelationID(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			var got string
-			handler := rw.CorrelationID(func(w http.ResponseWriter, r *http.Request) rw.Response {
+			handler := rw.CorrelationID(func(w rw.ResponseWriter, r *http.Request) rw.Response {
 				got, _ = rw.CorrelationIDFromContext(r.Context())
 				return rw.OK()
 			})
@@ -27,7 +27,7 @@ func TestCorrelationID(t *testing.T) {
 			if test.header != "" {
 				req.Header.Set(rw.CorrelationIDHeader, test.header)
 			}
-			handler(httptest.NewRecorder(), req)
+			rw.New().Handler(handler).ServeHTTP(httptest.NewRecorder(), req)
 			if test.header != "" && got != test.header {
 				t.Fatalf("expected correlation ID %q, got %q", test.header, got)
 			}

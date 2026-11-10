@@ -14,7 +14,7 @@ type correlationIDKey struct{}
 
 // CorrelationID attaches the incoming or a generated correlation ID to the request context.
 func CorrelationID(next HandlerFunc) HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) Response {
+	return func(w ResponseWriter, r *http.Request) Response {
 		id := r.Header.Get(CorrelationIDHeader)
 		if id == "" {
 			generated, err := uuid.NewRandom()
