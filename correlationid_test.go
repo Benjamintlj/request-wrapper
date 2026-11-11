@@ -37,8 +37,8 @@ func TestCorrelationID(t *testing.T) {
 			if test.header == "" && !regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`).MatchString(got) {
 				t.Fatalf("expected generated UUID, got %q", got)
 			}
-			if requestID != test.header {
-				t.Errorf("request header = %q, want %q", requestID, test.header)
+			if requestID != got {
+				t.Errorf("request header = %q, want %q", requestID, got)
 			}
 			if responseID := recorder.Result().Header.Get(rw.CorrelationIDHeader); responseID != got {
 				t.Errorf("response header = %q, want %q", responseID, got)

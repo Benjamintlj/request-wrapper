@@ -13,7 +13,7 @@ const CorrelationIDHeader = "X-Correlation-ID"
 type correlationIDKey struct{}
 
 // CorrelationID attaches the incoming or a generated ID to the request context
-// and response headers.
+// and request and response headers.
 func CorrelationID(next HandlerFunc) HandlerFunc {
 	return func(w ResponseWriter, r *http.Request) Response {
 		id := r.Header.Get(CorrelationIDHeader)
@@ -25,6 +25,7 @@ func CorrelationID(next HandlerFunc) HandlerFunc {
 			}
 			id = generated.String()
 		}
+		r.Header.Set(CorrelationIDHeader, id)
 		w.Header().Set(CorrelationIDHeader, id)
 		ctx := context.WithValue(r.Context(), correlationIDKey{}, id)
 		return next(w, r.WithContext(ctx))
