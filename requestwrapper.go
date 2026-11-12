@@ -70,7 +70,8 @@ func (w *Wrapper) Handler(handler HandlerFunc) http.Handler {
 		ctx, cancel := context.WithCancel(r.Context())
 		defer cancel()
 		r = r.WithContext(ctx)
-		wrapped(writer, r)
+		response := wrapped(writer, r)
+		w.WriteHeader(response.StatusCode)
 		if _, err := w.Write(writer.Body()); err != nil {
 			log.Printf("warning: writing response: %v", err)
 		}
