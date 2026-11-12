@@ -1,4 +1,4 @@
-package requestwrapper
+package inbound
 
 import (
 	"log/slog"

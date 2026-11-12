@@ -1,10 +1,10 @@
-package requestwrapper_test
+package inbound_test
 
 import (
 	"net/http"
 	"testing"
 
-	rw "github.com/Benjamintlj/request-wrapper"
+	rw "github.com/Benjamintlj/http-framework/inbound"
 )
 
 func TestHandlerReturnsOK(t *testing.T) {

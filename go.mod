@@ -1,4 +1,4 @@
-module github.com/Benjamintlj/request-wrapper
+module github.com/Benjamintlj/http-framework
 
 go 1.26.3
 

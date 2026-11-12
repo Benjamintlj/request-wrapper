@@ -1,4 +1,4 @@
-package requestwrapper_test
+package inbound_test
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	rw "github.com/Benjamintlj/request-wrapper"
+	rw "github.com/Benjamintlj/http-framework/inbound"
 )
 
 func TestCorrelationID(t *testing.T) {
